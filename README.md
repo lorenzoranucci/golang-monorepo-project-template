@@ -1,6 +1,6 @@
 # Golang Monorepo Project Template
 
-[![Build Status](https://github.com/lorenzoranucci/golang-monorepo-project-template/workflows/Build/badge.svg)](https://github.com/lorenzoranucci/golang-monorepo-project-template/actions)
+[![CI/CD on main push](https://github.com/lorenzoranucci/golang-monorepo-project-template/actions/workflows/on-main-push-ci-cd.yml/badge.svg)](https://github.com/lorenzoranucci/golang-monorepo-project-template/actions/workflows/on-main-push-ci-cd.yml)
 
 This repository serves as a template for creating a monorepo for Golang projects. It is designed to streamline the
 development process, making it easier for teams to manage web applications and backend systems efficiently.
