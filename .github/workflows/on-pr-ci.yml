@@ -1,0 +1,43 @@
+name: CI on pull request
+
+on:
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  detect-modified-go-mods:
+    uses: ./.github/workflows/detect-modified-go-mods.yml
+    with:
+      git-ref-before: ${{ github.event.pull_request.base.sha }}
+      git-ref-after: "HEAD"
+
+  ci-checks:
+    needs: [detect-modified-go-mods]
+    if: ${{ needs.detect-modified-go-mods.outputs.modified-go-mods-project-name != '[]' && needs.detect-modified-go-mods.outputs.modified-go-mods-project-name != '' }}
+    strategy:
+      fail-fast: true
+      matrix:
+        project: ${{ fromJson(needs.detect-modified-go-mods.outputs.modified-go-mods-project-name) }}
+    uses: ./.github/workflows/ci-checks.yml
+    secrets: inherit
+    with:
+      working-directory: ${{ matrix.project }}
+
+  check-ci-outcome:
+    needs: ci-checks
+    runs-on: ubuntu-22.04
+    if: always()
+    steps:
+      - id: check-ci-outcome
+        run: |
+          # Check if any of the ci-checks or ci-build is succeeded or skipped
+          if [[ ${{ needs.ci-checks.result }} == 'success' || ${{ needs.ci-checks.result }} == 'skipped' ]]; then
+            echo "CI succeeded"
+            exit 0
+          else
+            echo "CI failed"
+            exit 1
+          fi

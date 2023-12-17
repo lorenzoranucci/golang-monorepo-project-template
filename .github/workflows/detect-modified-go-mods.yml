@@ -1,0 +1,59 @@
+name: Detect modified go mods
+
+on:
+  workflow_call:
+    inputs:
+      git-ref-before:
+        required: true
+        type: string
+      git-ref-after:
+        required: true
+        type: string
+    outputs:
+      modified-go-mods:
+        description: 'A JSON array of modified go mods, e.g. [{"projectName":"retry","projectDir":"lib/retry","goModName":"github.com/lorenzoranucci/golang-monorepo-project-template/lib/retry","isLib":true}, {"projectName":"order-api","projectDir":"order-api","goModName":"github.com/lorenzoranucci/golang-monorepo-project-template/order-api","isLib":false}]'
+        value: ${{ jobs.detect-modified-go-mods.outputs.modified-go-mods }}
+      modified-go-mods-project-name:
+        description: 'A JSON array of modified project names, e.g. ["retry","order-api"]'
+        value: ${{ jobs.detect-modified-go-mods.outputs.modified-go-mods-project-name }}
+      modified-go-mods-project-name-no-lib:
+        description: 'A JSON array of modified project names, excluding libs, e.g. ["order-api"]'
+        value: ${{ jobs.detect-modified-go-mods.outputs.modified-go-mods-project-name-no-lib }}
+
+jobs:
+  detect-modified-go-mods:
+    runs-on: ubuntu-22.04
+    outputs:
+      modified-go-mods: ${{ steps.detect-modified-go-mods.outputs.modified-go-mods }}
+      modified-go-mods-project-name: ${{ steps.detect-modified-go-mods.outputs.modified-go-mods-project-name }}
+      modified-go-mods-project-name-no-lib: ${{ steps.detect-modified-go-mods.outputs.modified-go-mods-project-name-no-lib }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: setup .netrc
+        run: |
+          echo "machine github.com" >> ~/.netrc
+          echo "login ${{ github.actor }}" >> ~/.netrc
+          echo "password ${{ secrets.GITHUB_TOKEN }}" >> ~/.netrc
+      - uses: actions/setup-go@v4
+        with:
+          go-version: '1.21'
+          cache-dependency-path: .github/workflows/modified-go-mods-detector/go.sum
+      - run: go mod download
+      - id: detect-modified-go-mods
+        run: |
+          modifiedGoMods=$(go run ./.github/workflows/modified-go-mods-detector ${{ inputs.git-ref-before }}  ${{ inputs.git-ref-after }} | jq -c)
+          modifiedGoModsName=$(echo $modifiedGoMods | jq -c -r '[.[] | .projectName]')
+          modifiedGoModsNameNoLib=$(echo $modifiedGoMods | jq -c -r '[.[] | select(.isLib != true) | .projectName]')
+          
+          echo "Modified go mods:\n"
+          echo $modifiedGoMods
+          echo "Modified go-mods' project name:\n"
+          echo $modifiedGoModsName
+          echo "Modified go-mods' project name - excluding libs:\n"
+          echo $modifiedGoModsNameNoLib
+          
+          echo "modified-go-mods=$modifiedGoMods" >> $GITHUB_OUTPUT
+          echo "modified-go-mods-project-name=$modifiedGoModsName" >> $GITHUB_OUTPUT
+          echo "modified-go-mods-project-name-no-lib=$modifiedGoModsNameNoLib" >> $GITHUB_OUTPUT

@@ -1,0 +1,72 @@
+name: CI checks
+
+on:
+  workflow_call:
+    inputs:
+      working-directory:
+        required: true
+        type: string
+
+jobs:
+  ci-checks:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: setup .netrc
+        run: |
+          echo "machine github.com" >> ~/.netrc
+          echo "login ${{ github.actor }}" >> ~/.netrc
+          echo "password ${{ secrets.GITHUB_TOKEN }}" >> ~/.netrc
+          
+          # Needed for the go test when building docker images
+          touch .netrc
+          echo "machine github.com" >> .netrc
+          echo "login ${{ github.actor }}" >> .netrc
+          echo "password ${{ secrets.GITHUB_TOKEN }}" >> .netrc
+      - uses: actions/setup-go@v4
+        with:
+          go-version: '1.21'
+          cache-dependency-path: |
+            ${{ inputs.working-directory }}/go.sum
+      - name: go-mod-tidy-check
+        run: |
+          cd ${{ inputs.working-directory }}
+          
+          go mod tidy
+          
+          if [ -n "$(git diff)" ]; then
+            # Print the changes for debugging purposes
+            git diff
+            exit 1
+          fi
+      - name: lint
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: v1.54
+          working-directory: ${{ inputs.working-directory }}
+          args: --timeout=5m
+          skip-pkg-cache: true
+      - name: go-test
+        run: cd ${{ inputs.working-directory }} && go test -v ./...
+      - name: check if project is a lib
+        run: |
+          if [[ ${{ inputs.working-directory }} == lib/* ]]; then
+            echo "IS_LIB=true" >> $GITHUB_ENV
+          else
+            echo "IS_LIB=false" >> $GITHUB_ENV
+          fi
+      - uses: docker/setup-buildx-action@v3
+        if: ${{ env.IS_LIB == 'false' }}
+      - name: docker-build
+        uses: docker/build-push-action@v5
+        if: ${{ env.IS_LIB == 'false' }}
+        with:
+          context: "."
+          file: ./Dockerfile
+          platforms: linux/amd64
+          push: false
+          build-args: |
+            SUB_PROJECT=${{ inputs.working-directory }}
+          secret-files: |
+            netrc=./.netrc
+      

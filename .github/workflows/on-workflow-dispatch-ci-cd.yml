@@ -1,0 +1,48 @@
+name: CI/CD for test environment
+
+on:
+  workflow_dispatch:
+    inputs:
+      targetEnvironment:
+        type: choice
+        description: "target environment"
+        required: true
+        default: "test"
+        options:
+          - test
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  detect-modified-go-mods:
+    uses: ./.github/workflows/detect-modified-go-mods.yml
+    with:
+      git-ref-before: "origin/master"
+      git-ref-after: "HEAD"
+
+  ci-build:
+    needs: [detect-modified-go-mods]
+    if: ${{ needs.detect-modified-go-mods.outputs.modified-go-mods-project-name-no-lib != '[]' && needs.detect-modified-go-mods.outputs.modified-go-mods-project-name-no-lib != '' }}
+    strategy:
+      fail-fast: true
+      matrix:
+        project: ${{ fromJson(needs.detect-modified-go-mods.outputs.modified-go-mods-project-name-no-lib) }}
+    uses: ./.github/workflows/ci-build.yml
+    secrets: inherit
+    with:
+      app-name: ${{ matrix.project }}
+      working-directory: ${{ matrix.project }}
+
+  cd:
+    needs: [detect-modified-go-mods, ci-build]
+    if: ${{ needs.detect-modified-go-mods.outputs.modified-go-mods-project-name-no-lib != '[]' && needs.detect-modified-go-mods.outputs.modified-go-mods-project-name-no-lib != '' }}
+    strategy:
+      matrix:
+        project: ${{ fromJson(needs.detect-modified-go-mods.outputs.modified-go-mods-project-name-no-lib) }}
+    uses: ./.github/workflows/cd.yml
+    secrets: inherit
+    with:
+      app-name: ${{ matrix.project }}
+      working-directory: ${{ matrix.project }}/.deployments/${{ matrix.project }}-cdk

@@ -1,0 +1,79 @@
+name: CI build
+
+on:
+  workflow_call:
+    inputs:
+      working-directory:
+        required: true
+        type: string
+      app-name:
+        required: true
+        type: string
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-22.04
+    env:
+      REPOSITORY: ${{ inputs.working-directory }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set artifact version
+        id: set-artifact-version
+        run: |
+          if [ "${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}" != "true" ]; then
+            echo "artifact-version=test-next" >> $GITHUB_ENV
+            exit 0
+          fi
+
+          # Get the latest tag for the project considering the current commit
+          LATEST_TAG=$(git describe --tags --abbrev=0 --match "${{ inputs.app-name }}/*" "${{ github.sha }}" 2>/dev/null \
+            | sed 's/^${{ inputs.app-name }}\///')
+          if [ -z "$LATEST_TAG" ]; then
+            LATEST_TAG="v0.0.0"
+          fi
+          echo "artifact-version=${LATEST_TAG}-next" >> $GITHUB_ENV
+      - name: Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            # Set your docker repository here
+          tags: |
+            type=sha
+            type=ref,event=branch
+            type=ref,event=pr
+            ${{ env.artifact-version }}
+      - name: setup .netrc
+        run: |
+          echo "machine github.com" >> ./.netrc
+          echo "login ${{ github.actor }}" >> ./.netrc
+          echo "password ${{ secrets.GITHUB_TOKEN }}" >> ./.netrc
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/build-push-action@v5
+        with:
+          context: "."
+          file: ./Dockerfile
+          platforms: linux/amd64
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            SUB_PROJECT=${{ inputs.working-directory }}
+          secret-files: |
+            netrc=./.netrc
+      - uses: actions/setup-go@v4
+        with:
+          go-version: '1.21'
+          cache-dependency-path: |
+            ${{ inputs.working-directory }}/go.sum
+      - name: build-s3-artifact
+        run: |
+          cd ${{ inputs.working-directory }} && GOARCH=arm64 GOOS=linux go build -o build/bootstrap
+          cd build
+          zip -r ../artifact.zip *
+      - name: push-s3-artifact
+        working-directory: ${{ inputs.working-directory }}
+        run: |
+          # This deploy strategy could be needed if you want to deploy AWS lambdas
+          BUCKET_NAME="your-bucket-name-here"
+          aws s3 cp artifact.zip s3://$BUCKET_NAME/${{ inputs.app-name }}/${{ env.artifact-version }}

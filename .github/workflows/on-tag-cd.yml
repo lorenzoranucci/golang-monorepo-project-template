@@ -1,0 +1,36 @@
+name: CD live
+
+on:
+  push:
+    tags:
+      - '*/v*.*.*'
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  set-app-name-and-wd:
+    runs-on: ubuntu-22.04
+    outputs:
+      app-name: ${{ steps.set-app-name.outputs.APP_NAME }}
+      working-directory: ${{ steps.set-project-dir.outputs.WORKING_DIRECTORY }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: set-app-name
+        run: |
+          APP_NAME=$(echo ${GITHUB_REF_NAME/\/v*/})
+          echo "APP_NAME=$APP_NAME" >> $GITHUB_ENV
+          echo "APP_NAME=$APP_NAME" >> $GITHUB_OUTPUT
+      - id: set-project-dir
+        run: |
+          WORKING_DIRECTORY=${{ env.APP_NAME }}/.deployments/${{ env.APP_NAME }}-cdk
+          echo "WORKING_DIRECTORY=$WORKING_DIRECTORY" >> $GITHUB_OUTPUT
+
+  cd:
+    needs: set-app-name-and-wd
+    uses: ./.github/workflows/cd.yml
+    secrets: inherit
+    with:
+      working-directory: ${{ needs.set-app-name-and-wd.outputs.working-directory }}
+      app-name: ${{ needs.set-app-name-and-wd.outputs.app-name }}
