@@ -31,3 +31,14 @@ To use this template for your own project, follow these steps:
 4. Update the GitHub Actions workflows to fit the specific needs of your project.
 
 5. Start building your Golang project with a robust and scalable monorepo structure!
+
+### How to configure the `.netrc` file
+
+The .netrc file is needed if you want to make this project private.
+Go and in turn git will use the .netrc file to authenticate with GitHub to download the private packages in the `lib`.
+
+1. Create a GitHub personal access token [here](https://github.com/settings/tokens).
+2. Create a `.netrc` file in this project's root folder:
+    - `cp .netrc.dist .netrc`  Note that the .netrc file is gitignored.
+3. Replace `your-github-username` with your GitHub username.
+4. Replace `your-github-personal-access-token` with the token you created in step 1.

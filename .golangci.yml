@@ -1,0 +1,19 @@
+linters-settings:
+  goimports:
+    local-prefixes: github.com/lorenzoranucci/golang-monorepo-project-template
+
+linters:
+  enable:
+    - errcheck
+    - gochecknoinits
+    - goconst
+    - gofmt
+    - gofumpt
+    - goimports
+    - gomoddirectives
+    - gosec
+    - gosimple
+    - govet
+    - unconvert
+    - unused
+    - whitespace

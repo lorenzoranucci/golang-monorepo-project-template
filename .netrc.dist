@@ -1,0 +1,3 @@
+machine github.com
+login your-github-username
+password your-github-personal-token
