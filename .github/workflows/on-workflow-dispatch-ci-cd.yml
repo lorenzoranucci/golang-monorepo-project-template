@@ -19,7 +19,7 @@ jobs:
   detect-modified-go-mods:
     uses: ./.github/workflows/detect-modified-go-mods.yml
     with:
-      git-ref-before: "origin/master"
+      git-ref-before: "origin/main"
       git-ref-after: "HEAD"
 
   ci-build:

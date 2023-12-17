@@ -13,8 +13,8 @@ There are four phases:
 
 - Pull request: when a pull request is created or modified.
 - (optional) Test deploy: when a pull request is deployed on the test environment.
-- Merge: when a pull request is merged on master.
-- Release: when a tag is created on master.
+- Merge: when a pull request is merged on main.
+- Release: when a tag is created on main.
 
 ## Pull request
 
@@ -34,7 +34,7 @@ The CD deploys the docker image tagged with `test-next` on the test environment.
 
 ## Merge
 
-The merge phase is triggered when a pull request is merged on master.
+The merge phase is triggered when a pull request is merged on main.
 
 It executes the CI and in case of success it runs the CD.
 

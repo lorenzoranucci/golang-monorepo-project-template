@@ -1,9 +1,9 @@
-name: CI/CD on master push
+name: CI/CD on main push
 
 on:
   push:
     branches:
-      - master
+      - main
 
 concurrency:
   group: ${{ github.workflow }}

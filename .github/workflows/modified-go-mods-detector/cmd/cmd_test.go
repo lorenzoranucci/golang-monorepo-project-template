@@ -23,7 +23,7 @@ func TestRun(t *testing.T) {
 		expectedOutput string
 	}{
 		{
-			name:           "Push on master event detected",
+			name:           "Push on main event detected",
 			args:           []string{"main", "4675207", "89d0267"},
 			expectedOutput: `[]`,
 		},
