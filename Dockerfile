@@ -12,9 +12,7 @@ COPY . .
 
 WORKDIR /srv/$SUB_PROJECT
 
-RUN --mount=type=secret,id=netrc,dst=/root/.netrc go get .
-
-RUN CGO_ENABLED=0 go build -o bin/appbin
+RUN --mount=type=secret,id=netrc,dst=/root/.netrc CGO_ENABLED=0 go build -o bin/appbin
 
 FROM gcr.io/distroless/static-debian11:nonroot
 
