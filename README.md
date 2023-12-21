@@ -18,7 +18,7 @@ development process, making it easier for teams to manage web applications and b
 - **Single Version Policy:** Adopt a single version policy for internal libraries to maintain consistency and simplify
   dependency management.
 
-- **Detect modified projects**: CI and CD pipelines are executed just for the modified modules, avoiding building every subproject every time.
+- **Detect modified modules**: CI and CD pipelines are executed just for the modified modules, avoiding building every subproject every time.
 A module is considered modified even if a local dependency (lib) is modified.
 
 ## Getting Started
