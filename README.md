@@ -22,15 +22,13 @@ development process, making it easier for teams to manage web applications and b
 
 To use this template for your own project, follow these steps:
 
-1. Click on the "Use this template" button on GitHub to create a new repository based on this template.
+1. Clone the newly created repository to your local machine.
 
-2. Clone the newly created repository to your local machine.
+2. Customize the project structure, adding your Golang applications and libraries.
 
-3. Customize the project structure, adding your Golang applications and libraries.
+3. Update the GitHub Actions workflows to fit the specific needs of your project.
 
-4. Update the GitHub Actions workflows to fit the specific needs of your project.
-
-5. Start building your Golang project with a robust and scalable monorepo structure!
+4. Start building your Golang project with a robust and scalable monorepo structure!
 
 ### How to configure the `.netrc` file
 
